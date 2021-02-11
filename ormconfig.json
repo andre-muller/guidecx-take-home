@@ -1,0 +1,12 @@
+{
+  "type": "postgres",
+  "host": "postgres-container",
+  "port": 5432,
+  "username": "postgres",
+  "password": "",
+  "database": "postgres",
+  "synchronize": true,
+  "logging": false,
+  "entities": ["./src/repositories/db-task-list/entities/**/*.{ts,js}"],
+  "migrations": ["./src/repositories/db-task-list/entities/**/*.{ts,js}"]
+}
