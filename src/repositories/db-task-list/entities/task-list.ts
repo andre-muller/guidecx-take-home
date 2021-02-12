@@ -15,13 +15,13 @@ class TaskList implements TaskListModel {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ type: 'date', nullable: true })
   started_at: Date | null;
 
-  @Column()
+  @Column({ type: 'date', nullable: true })
   due_date: Date;
 
-  @Column()
+  @Column({ type: 'date', nullable: true })
   forecasted_completion_date: Date | null;
 
   @CreateDateColumn()

@@ -5,44 +5,45 @@ import { TaskListModel } from '@/models/task-list';
 import TaskList from './entities/task-list';
 
 class DbTaskListListRepository implements TaskListRepository {
+  private ormRepository: Repository<TaskList>;
+
+  constructor() {
+    this.ormRepository = getRepository(TaskList);
+  }
+
   public async list(): Promise<TaskListModel[]> {
-    const ormRepository = getRepository(TaskList);
-    const lists = await ormRepository.find();
+    const lists = await this.ormRepository.find();
 
     return lists;
   }
 
   public async create(data: CreateTaskList.Params): Promise<TaskListModel> {
-    const ormRepository = getRepository(TaskList);
-    const findById = ormRepository.create(data);
+    const newTaskList = this.ormRepository.create(data);
+    await this.ormRepository.save(newTaskList);
 
-    return findById;
+    return newTaskList;
   }
 
   public async findById(id: number): Promise<TaskListModel | undefined> {
-    const ormRepository = getRepository(TaskList);
-    const findById = await ormRepository.findOne(id);
+    const findById = await this.ormRepository.findOne(id);
 
     return findById;
   }
 
   public async save(data: TaskListModel): Promise<TaskListModel> {
-    const ormRepository = getRepository(TaskList);
-    await ormRepository.save(data);
+    await this.ormRepository.save(data);
 
     return data;
   }
 
   public async delete(id: number): Promise<boolean> {
-    const ormRepository = getRepository(TaskList);
-    const deleted = await ormRepository.delete(id);
+    const deleted = await this.ormRepository.delete(id);
 
     return Boolean(deleted);
   }
 
   public async updateForecastDate(id: number, date: Date): Promise<boolean> {
-    const ormRepository = getRepository(TaskList);
-    const updated = ormRepository.save({
+    const updated = this.ormRepository.save({
       id,
       forecasted_completion_date: date,
     });

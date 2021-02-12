@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgres:
-    container_name: postgres-container
+    container_name: postgres-guidecx
     image: postgres:13-alpine
     restart: always
     environment:
@@ -17,12 +17,13 @@ services:
     working_dir: /usr/src/backend-api-guidecx
     restart: always
     command: bash -c "npm install --only=prod && npm run debug"
-
+    env_file: .env
     volumes:
       - ./dist/:/usr/src/backend-api-guidecx/dist/
       - ./package.json:/usr/src/backend-api-guidecx/package.json
       - ./ormconfig.json:/usr/src/backend-api-guidecx/ormconfig.json
     ports:
-      - '5050:5050'
+      - '${PORT}:${PORT}'
+      - 9229:9229
     links:
       - postgres

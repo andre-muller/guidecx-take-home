@@ -1,12 +1,11 @@
 {
   "type": "postgres",
-  "host": "postgres-container",
+  "host": "postgres-guidecx",
   "port": 5432,
   "username": "postgres",
   "password": "",
-  "database": "postgres",
+  "database": "tasksdb",
   "synchronize": true,
-  "logging": false,
-  "entities": ["./src/repositories/db-task-list/entities/**/*.{ts,js}"],
-  "migrations": ["./src/repositories/db-task-list/entities/**/*.{ts,js}"]
+  "logging": true,
+  "entities": ["dist/repositories/db-task-list/entities/*.js"]
 }

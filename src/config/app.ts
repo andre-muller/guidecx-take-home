@@ -5,4 +5,5 @@ import router from './routes';
 const app = express();
 setupMiddlewares(app);
 app.use(router);
+
 export default app;

@@ -1,57 +1,63 @@
 import { getRepository, Repository } from 'typeorm';
-import { addDays } from 'date-fns';
+import { addDays, parseISO } from 'date-fns';
 import { TaskRepository } from '@/repositories/protocols/task-repository';
 import { CreateTask } from '@/usecases/protocols';
 import { StatusRole, TaskModel } from '@/models/task';
 import Task from './entities/task';
 
 class DbTaskRepository implements TaskRepository {
+  private ormRepository: Repository<Task>;
+
+  constructor() {
+    this.ormRepository = getRepository(Task);
+  }
+
   public async list(): Promise<TaskModel[]> {
-    const ormRepository = getRepository(Task);
-    const lists = await ormRepository.find();
+    const lists = await this.ormRepository.find();
 
     return lists;
   }
 
   public async create(data: CreateTask.Params): Promise<TaskModel> {
-    const ormRepository = getRepository(Task);
-    const findById = ormRepository.create(data);
+    const newTask = this.ormRepository.create(data);
+    await this.ormRepository.save(newTask);
 
-    return findById;
+    return newTask;
   }
 
   public async findById(id: number): Promise<TaskModel | undefined> {
-    const ormRepository = getRepository(Task);
-    const findById = await ormRepository.findOne(id);
+    const findById = await this.ormRepository.findOne(id);
 
     return findById;
   }
 
   public async save(data: TaskModel): Promise<TaskModel> {
-    const ormRepository = getRepository(Task);
-    await ormRepository.save(data);
+    await this.ormRepository.save(data);
 
     return data;
   }
 
   public async delete(id: number): Promise<boolean> {
-    const ormRepository = getRepository(Task);
-    const deleted = await ormRepository.delete(id);
+    const deleted = await this.ormRepository.delete(id);
 
     return Boolean(deleted);
   }
 
   public async sumNewForecast(id: number): Promise<Date | boolean> {
-    const ormRepository = getRepository(Task);
-    const [duration] = await ormRepository
-      .createQueryBuilder('tasks')
-      .select('SUM(tasks.duration)', 'sum')
-      .where('tasks.task_list_id = :task_list_id', { task_list_id: id })
-      .where('tasks.status = :status', { status: 'in_progress' })
-      .orWhere('tasks.status = :status', { status: 'not_started' })
+    const { sum: duration } = await this.ormRepository
+      .createQueryBuilder()
+      .select('SUM(Task.duration)', 'sum')
+      .where(
+        'Task.task_list_id = :task_list_id AND (Task.status = :statusProgress OR Task.status = :statusNot)',
+        {
+          task_list_id: id,
+          statusProgress: 'in_progress',
+          statusNot: 'not_started',
+        },
+      )
       .getRawOne();
 
-    const dateStarted = await ormRepository.findOne({
+    const dateStarted = await this.ormRepository.findOne({
       where: {
         task_list_id: id,
         status: 'in_progress',
@@ -60,9 +66,11 @@ class DbTaskRepository implements TaskRepository {
     });
 
     if (dateStarted?.started_at) {
-      return addDays(dateStarted.started_at, duration);
+      return addDays(
+        parseISO(String(dateStarted.started_at)),
+        Number(duration),
+      );
     }
-
     return false;
   }
 
@@ -70,13 +78,12 @@ class DbTaskRepository implements TaskRepository {
     currentDependency: number | null | undefined,
     currentId: number,
   ): Promise<boolean> {
-    const ormRepository = getRepository(Task);
-    await ormRepository.save({
+    await this.ormRepository.save({
       id: currentId,
       dependency_id: null,
     });
 
-    await ormRepository.save({
+    await this.ormRepository.save({
       dependency_id: currentId,
       status: StatusRole.in_progress,
       started_at: new Date(),
@@ -88,8 +95,7 @@ class DbTaskRepository implements TaskRepository {
   public async findByDependencyId(
     dependencyId: number,
   ): Promise<Task | undefined> {
-    const ormRepository = getRepository(Task);
-    const findTask = await ormRepository.findOne({
+    const findTask = await this.ormRepository.findOne({
       where: {
         dependency_id: dependencyId,
       },
